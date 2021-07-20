@@ -84,6 +84,24 @@ func TestHandleReceiveBuffer(t *testing.T) {
 	}
 }
 
+func TestHandleFromNetlinkHandle(t *testing.T) {
+	netlinkHandle, err := netlink.NewHandle()
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer netlinkHandle.Delete()
+
+	h := HandleFromNetlinkHandle(netlinkHandle)
+	sizes, err := h.GetSocketReceiveBufferSize()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(sizes) != len(h.sockets) || len(h.sockets) == 0 {
+		t.Fatalf("Unexpected number of socket buffer sizes: %d (expected %d)",
+			len(sizes), len(h.sockets))
+	}
+}
+
 func verifySockTimeVal(t *testing.T, fd int, tv unix.Timeval) {
 	var (
 		tr unix.Timeval

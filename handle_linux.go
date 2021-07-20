@@ -2,8 +2,11 @@ package ipset
 
 import (
 	"fmt"
+	"reflect"
 	"time"
+	"unsafe"
 
+	"github.com/vishvananda/netlink"
 	"github.com/vishvananda/netlink/nl"
 	"github.com/vishvananda/netns"
 	"golang.org/x/sys/unix"
@@ -117,6 +120,22 @@ func NewHandleAt(ns netns.NsHandle) (*Handle, error) {
 // new and the origin netns Handle.
 func NewHandleAtFrom(newNs, curNs netns.NsHandle) (*Handle, error) {
 	return newHandle(newNs, curNs)
+}
+
+func HandleFromNetlinkHandle(h *netlink.Handle) *Handle {
+	val := reflect.ValueOf(h)
+	sockets := val.Elem().FieldByName("sockets")
+
+	ptr := unsafe.Pointer(sockets.UnsafeAddr())
+	sockets2 := *(*map[int]*nl.SocketHandle)(ptr)
+	s := sockets2[unix.NETLINK_NETFILTER]
+
+	h2 := &Handle{
+		sockets: map[int]*nl.SocketHandle{
+			unix.NETLINK_NETFILTER: s,
+		},
+	}
+	return h2
 }
 
 func newHandle(newNs, curNs netns.NsHandle) (*Handle, error) {
