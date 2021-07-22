@@ -6,7 +6,6 @@ import (
 	"unsafe"
 
 	"github.com/vishvananda/netlink"
-	"github.com/vishvananda/netlink/nl"
 	"golang.org/x/sys/unix"
 )
 
@@ -26,19 +25,15 @@ func TestHandleCreateDelete(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	for _, f := range nl.SupportedNlFamilies {
-		sh, ok := h.sockets[f]
-		if !ok {
-			t.Fatalf("Handle socket(s) for family %d was not created", f)
-		}
-		if sh.Socket == nil {
-			t.Fatalf("Socket for family %d was not created", f)
-		}
+
+	sh := h.socket
+	if sh == nil {
+		t.Fatalf("Socket for family %d was not created", unix.NETLINK_NETFILTER)
 	}
 
 	h.Delete()
-	if h.sockets != nil {
-		t.Fatalf("Handle socket(s) were not destroyed")
+	if h.socket != nil {
+		t.Fatalf("Handle socket were not destroyed")
 	}
 }
 func TestHandleTimeout(t *testing.T) {
@@ -48,15 +43,12 @@ func TestHandleTimeout(t *testing.T) {
 	}
 	defer h.Delete()
 
-	for _, sh := range h.sockets {
-		verifySockTimeVal(t, sh.Socket.GetFd(), unix.Timeval{Sec: 0, Usec: 0})
-	}
+	sh := h.socket
+	verifySockTimeVal(t, sh.Socket.GetFd(), unix.Timeval{Sec: 0, Usec: 0})
 
 	h.SetSocketTimeout(2*time.Second + 8*time.Millisecond)
 
-	for _, sh := range h.sockets {
-		verifySockTimeVal(t, sh.Socket.GetFd(), unix.Timeval{Sec: 2, Usec: 8000})
-	}
+	verifySockTimeVal(t, sh.Socket.GetFd(), unix.Timeval{Sec: 2, Usec: 8000})
 }
 
 func TestHandleReceiveBuffer(t *testing.T) {
@@ -72,9 +64,9 @@ func TestHandleReceiveBuffer(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(sizes) != len(h.sockets) {
+	if len(sizes) != 1 {
 		t.Fatalf("Unexpected number of socket buffer sizes: %d (expected %d)",
-			len(sizes), len(h.sockets))
+			len(sizes), 1)
 	}
 	for _, s := range sizes {
 		if s < 65536 || s > 2*65536 {
@@ -96,9 +88,9 @@ func TestHandleFromNetlinkHandle(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(sizes) != len(h.sockets) || len(h.sockets) == 0 {
+	if len(sizes) != 1 || h.socket == nil {
 		t.Fatalf("Unexpected number of socket buffer sizes: %d (expected %d)",
-			len(sizes), len(h.sockets))
+			len(sizes), 1)
 	}
 }
 

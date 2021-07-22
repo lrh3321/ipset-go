@@ -202,8 +202,13 @@ func (h *Handle) addDel(nlCmd int, setname string, entry *Entry) error {
 		data.AddChild(&nl.Uint32Attribute{Type: IPSET_ATTR_TIMEOUT | nl.NLA_F_NET_BYTEORDER, Value: *entry.Timeout})
 	}
 
-	if entry.IP != nil {
-		nestedData := nl.NewRtAttr(IPSET_ATTR_IP|int(nl.NLA_F_NET_BYTEORDER), entry.IP)
+	family := nl.GetIPFamily(entry.IP)
+
+	if ip := entry.IP; ip != nil {
+		if family == nl.FAMILY_V4 {
+			ip = ip.To4()
+		}
+		nestedData := nl.NewRtAttr(IPSET_ATTR_IP|int(nl.NLA_F_NET_BYTEORDER), ip)
 		data.AddChild(nl.NewRtAttr(IPSET_ATTR_IP|int(nl.NLA_F_NESTED), nestedData.Serialize()))
 	}
 
@@ -216,6 +221,9 @@ func (h *Handle) addDel(nlCmd int, setname string, entry *Entry) error {
 	}
 
 	if ip := entry.IP2; ip != nil {
+		if family == nl.FAMILY_V4 {
+			ip = ip.To4()
+		}
 		nestedData := nl.NewRtAttr(IPSET_ATTR_IP|int(nl.NLA_F_NET_BYTEORDER), ip)
 		data.AddChild(nl.NewRtAttr(IPSET_ATTR_IP2|int(nl.NLA_F_NESTED), nestedData.Serialize()))
 	}

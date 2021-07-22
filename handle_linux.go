@@ -20,7 +20,7 @@ var pkgHandle = &Handle{}
 // same netlink family share the same netlink socket,
 // which gets released when the handle is deleted.
 type Handle struct {
-	sockets map[int]*nl.SocketHandle
+	socket *nl.SocketHandle
 }
 
 // SetSocketTimeout configures timeout for default netlink sockets
@@ -39,12 +39,6 @@ func GetSocketTimeout() time.Duration {
 	return time.Duration(nsec) * time.Nanosecond
 }
 
-// SupportsNetlinkFamily reports whether the passed netlink family is supported by this Handle
-func (h *Handle) SupportsNetlinkFamily(nlFamily int) bool {
-	_, ok := h.sockets[nlFamily]
-	return ok
-}
-
 // NewHandle returns a netlink handle on the current network namespace.
 // Caller may specify the netlink families the handle should support.
 // If no families are specified, all the families the netlink package
@@ -61,8 +55,9 @@ func (h *Handle) SetSocketTimeout(to time.Duration) error {
 	if to < time.Microsecond {
 		return fmt.Errorf("invalid timeout, minimul value is %s", time.Microsecond)
 	}
-	tv := unix.NsecToTimeval(to.Nanoseconds())
-	for _, sh := range h.sockets {
+	sh := h.socket
+	if sh != nil {
+		tv := unix.NsecToTimeval(to.Nanoseconds())
 		if err := sh.Socket.SetSendTimeout(&tv); err != nil {
 			return err
 		}
@@ -81,7 +76,8 @@ func (h *Handle) SetSocketReceiveBufferSize(size int, force bool) error {
 	if force {
 		opt = unix.SO_RCVBUFFORCE
 	}
-	for _, sh := range h.sockets {
+	sh := h.socket
+	if sh != nil {
 		fd := sh.Socket.GetFd()
 		err := unix.SetsockoptInt(fd, unix.SOL_SOCKET, opt, size)
 		if err != nil {
@@ -95,17 +91,19 @@ func (h *Handle) SetSocketReceiveBufferSize(size int, force bool) error {
 // socket in the netlink handle. The retrieved value should be the
 // double to the one set for SetSocketReceiveBufferSize.
 func (h *Handle) GetSocketReceiveBufferSize() ([]int, error) {
-	results := make([]int, len(h.sockets))
-	i := 0
-	for _, sh := range h.sockets {
-		fd := sh.Socket.GetFd()
-		size, err := unix.GetsockoptInt(fd, unix.SOL_SOCKET, unix.SO_RCVBUF)
-		if err != nil {
-			return nil, err
-		}
-		results[i] = size
-		i++
+	sh := h.socket
+	if sh == nil {
+		return nil, nil
 	}
+
+	fd := sh.Socket.GetFd()
+	size, err := unix.GetsockoptInt(fd, unix.SOL_SOCKET, unix.SO_RCVBUF)
+	if err != nil {
+		return nil, err
+	}
+	results := make([]int, 1)
+	results[0] = size
+
 	return results, nil
 }
 
@@ -130,11 +128,7 @@ func HandleFromNetlinkHandle(h *netlink.Handle) *Handle {
 	sockets2 := *(*map[int]*nl.SocketHandle)(ptr)
 	s := sockets2[unix.NETLINK_NETFILTER]
 
-	h2 := &Handle{
-		sockets: map[int]*nl.SocketHandle{
-			unix.NETLINK_NETFILTER: s,
-		},
-	}
+	h2 := &Handle{socket: s}
 	return h2
 }
 
@@ -143,25 +137,21 @@ func newHandle(newNs, curNs netns.NsHandle) (*Handle, error) {
 	if err != nil {
 		return nil, err
 	}
-	h := &Handle{}
-	h.sockets = map[int]*nl.SocketHandle{
-		unix.NETLINK_NETFILTER: {Socket: s},
-	}
-
+	h := &Handle{socket: &nl.SocketHandle{Socket: s}}
 	return h, nil
 }
 
 // Delete releases the resources allocated to this handle
 func (h *Handle) Delete() {
-	for _, sh := range h.sockets {
+	if sh := h.socket; sh != nil {
 		sh.Close()
 	}
-	h.sockets = nil
+	h.socket = nil
 }
 
 func (h *Handle) newNetlinkRequest(proto, flags int) *nl.NetlinkRequest {
 	// Do this so that package API still use nl package variable nextSeqNr
-	if h.sockets == nil {
+	if h.socket == nil {
 		return nl.NewNetlinkRequest(proto, flags)
 	}
 	return &nl.NetlinkRequest{
@@ -170,6 +160,6 @@ func (h *Handle) newNetlinkRequest(proto, flags int) *nl.NetlinkRequest {
 			Type:  uint16(proto),
 			Flags: unix.NLM_F_REQUEST | uint16(flags),
 		},
-		Sockets: h.sockets,
+		Sockets: map[int]*nl.SocketHandle{unix.NETLINK_NETFILTER: h.socket},
 	}
 }
