@@ -40,10 +40,7 @@ func GetSocketTimeout() time.Duration {
 }
 
 // NewHandle returns a netlink handle on the current network namespace.
-// Caller may specify the netlink families the handle should support.
-// If no families are specified, all the families the netlink package
-// supports will be automatically added.
-func NewHandle(nlFamilies ...int) (*Handle, error) {
+func NewHandle() (*Handle, error) {
 	return newHandle(netns.None(), netns.None())
 }
 
