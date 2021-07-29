@@ -31,7 +31,7 @@ func TestHandleCreateDelete(t *testing.T) {
 		t.Fatalf("Socket for family %d was not created", unix.NETLINK_NETFILTER)
 	}
 
-	h.Delete()
+	h.Close()
 	if h.socket != nil {
 		t.Fatalf("Handle socket were not destroyed")
 	}
@@ -41,7 +41,7 @@ func TestHandleTimeout(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer h.Delete()
+	defer h.Close()
 
 	sh := h.socket
 	verifySockTimeVal(t, sh.Socket.GetFd(), unix.Timeval{Sec: 0, Usec: 0})
@@ -56,7 +56,7 @@ func TestHandleReceiveBuffer(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer h.Delete()
+	defer h.Close()
 	if err := h.SetSocketReceiveBufferSize(65536, false); err != nil {
 		t.Fatal(err)
 	}

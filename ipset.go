@@ -50,6 +50,11 @@ func Destroy(setname string) error {
 	return pkgHandle.Destroy(setname)
 }
 
+// ForceDestroy destroys a ipset return nil if not exist
+func ForceDestroy(setname string) error {
+	return pkgHandle.ForceDestroy(setname)
+}
+
 // Flush flushes an existing ipset
 func Flush(setname string) error {
 	return pkgHandle.Flush(setname)
@@ -73,6 +78,16 @@ func Add(setname string, entry *Entry) error {
 // Del deletes an entry from an existing ipset.
 func Del(setname string, entry *Entry) error {
 	return pkgHandle.Del(setname, entry)
+}
+
+// Rename rename a set. Set identified by SETNAME-TO must not exist.
+func Rename(from string, to string) error {
+	return pkgHandle.Rename(from, to)
+}
+
+// Swap swap the content of two sets, or in another words, exchange the name of two sets. The referred sets must exist and compatible type of sets can be swapped only.
+func Swap(from string, to string) error {
+	return pkgHandle.Swap(from, to)
 }
 
 var typeRevisionsMap = map[string][]uint8{

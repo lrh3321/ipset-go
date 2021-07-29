@@ -533,6 +533,83 @@ func TestListMethodCreateListAddDelDestroy(t *testing.T) {
 	}
 }
 
+func TestRename(t *testing.T) {
+	minKernelRequired(t, 3, 11)
+
+	tearDown := setUpNetlinkTest(t)
+	defer tearDown()
+
+	var (
+		err      error
+		fromName = "set1"
+		toName   = "set2"
+	)
+
+	err = Create(fromName, TypeHashIP, CreateOptions{})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	err = Rename(fromName, toName)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	err = Create(fromName, TypeHashIP, CreateOptions{})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	err = Rename(toName, fromName)
+	if err != ErrNewNameAlreadyExist {
+		t.Fatalf("Set should not be renamed: a set with the new name already exists, but: %v", err)
+	}
+}
+func TestSwap(t *testing.T) {
+	minKernelRequired(t, 3, 11)
+
+	tearDown := setUpNetlinkTest(t)
+	defer tearDown()
+
+	var (
+		err       error
+		fromName  = "set1"
+		toName    = "set2"
+		otherName = "set3"
+	)
+
+	err = Create(fromName, TypeHashIP, CreateOptions{})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	err = Create(toName, TypeHashIP, CreateOptions{})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	err = Create(otherName, TypeListSet, CreateOptions{})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	err = Swap(fromName, toName)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	err = Swap(fromName, fromName+".new")
+	if err != ErrSecondSetNotExist {
+		t.Fatalf("Sets should not be swapped: the second set does not exist, but: %v", err)
+	}
+
+	err = Swap(fromName, otherName)
+	if err != ErrTypeMismatch {
+		t.Fatalf("The sets should not be swapped: their type does not match, but: %v", err)
+	}
+
+}
+
 func assertIPSetEntryEqual(t *testing.T, except *Entry, actual *Entry) {
 	if except.IP != nil {
 		if !except.IP.Equal(actual.IP) {

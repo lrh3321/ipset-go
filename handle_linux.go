@@ -138,12 +138,17 @@ func newHandle(newNs, curNs netns.NsHandle) (*Handle, error) {
 	return h, nil
 }
 
-// Delete releases the resources allocated to this handle
-func (h *Handle) Delete() {
+// Close releases the resources allocated to this handle
+func (h *Handle) Close() {
 	if sh := h.socket; sh != nil {
 		sh.Close()
 	}
 	h.socket = nil
+}
+
+// Deprecated: Use Close instead.
+func (h *Handle) Delete() {
+	h.Close()
 }
 
 func (h *Handle) newNetlinkRequest(proto, flags int) *nl.NetlinkRequest {

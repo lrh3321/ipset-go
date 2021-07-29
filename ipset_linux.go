@@ -134,6 +134,14 @@ func (h *Handle) Destroy(setname string) error {
 	return err
 }
 
+func (h *Handle) ForceDestroy(setname string) error {
+	err := h.Destroy(setname)
+	if err != nil && err != ErrSetNotExist {
+		return err
+	}
+	return nil
+}
+
 func (h *Handle) Flush(setname string) error {
 	req := h.newRequest(IPSET_CMD_FLUSH)
 	req.AddData(nl.NewRtAttr(IPSET_ATTR_SETNAME, nl.ZeroTerminated(setname)))
@@ -178,6 +186,16 @@ func (h *Handle) Add(setname string, entry *Entry) error {
 // Del deletes an entry from an existing ipset.
 func (h *Handle) Del(setname string, entry *Entry) error {
 	return h.addDel(IPSET_CMD_DEL, setname, entry)
+}
+
+// Rename rename a set. Set identified by SETNAME-TO must not exist.
+func (h *Handle) Rename(from string, to string) error {
+	return h.renameSwap(IPSET_CMD_RENAME, from, to)
+}
+
+// Swap swap the content of two sets, or in another words, exchange the name of two sets. The referred sets must exist and compatible type of sets can be swapped only.
+func (h *Handle) Swap(from string, to string) error {
+	return h.renameSwap(IPSET_CMD_SWAP, from, to)
 }
 
 func (h *Handle) addDel(nlCmd int, setname string, entry *Entry) error {
@@ -252,6 +270,15 @@ func (h *Handle) addDel(nlCmd int, setname string, entry *Entry) error {
 
 	data.AddChild(&nl.Uint32Attribute{Type: IPSET_ATTR_LINENO | nl.NLA_F_NET_BYTEORDER, Value: 0})
 	req.AddData(data)
+
+	_, err := ipsetExecute(req)
+	return err
+}
+
+func (h *Handle) renameSwap(nlCmd int, from string, to string) error {
+	req := h.newRequest(nlCmd)
+	req.AddData(nl.NewRtAttr(IPSET_ATTR_SETNAME, nl.ZeroTerminated(from)))
+	req.AddData(nl.NewRtAttr(IPSET_ATTR_SETNAME2, nl.ZeroTerminated(to)))
 
 	_, err := ipsetExecute(req)
 	return err
