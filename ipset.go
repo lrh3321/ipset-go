@@ -40,12 +40,12 @@ func Protocol() (uint8, uint8, error) {
 	return pkgHandle.Protocol()
 }
 
-// Create creates a new ipset
+// Create creates a new ipset. Equivalent to: `ipset create $setname $typename`
 func Create(setname, typename string, options CreateOptions) error {
 	return pkgHandle.Create(setname, typename, options)
 }
 
-// Destroy destroys an existing ipset
+// Destroy destroys an existing ipset. Equivalent to: `ipset destroy hash01`
 func Destroy(setname string) error {
 	return pkgHandle.Destroy(setname)
 }
