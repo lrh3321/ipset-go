@@ -13,6 +13,11 @@ func ExampleCreateAdd() {
 	if err != nil {
 		log.Fatal(err)
 	}
+	defer func() {
+		if err := ForceDestroy(setname); err != nil {
+			log.Fatal(err)
+		}
+	}()
 
 	err = Create(setname, TypeHashIP, CreateOptions{})
 	if err != nil {
@@ -47,7 +52,11 @@ func ExampleCreateAdd() {
 
 func ExampleDestroy() {
 	var setname = "hash01"
-	err := Destroy(setname)
+	err := Create(setname, TypeHashIP, CreateOptions{Replace: true})
+	if err != nil {
+		log.Fatal(err)
+	}
+	err = Destroy(setname)
 	if err != nil {
 		if os.IsNotExist(err) {
 			fmt.Printf("no such set: %s\n", setname)
@@ -57,7 +66,8 @@ func ExampleDestroy() {
 	}
 
 	// destroy a  not exist one
-	err = Destroy(setname + "2")
+	setname = setname + "2"
+	err = Destroy(setname)
 	if err != nil {
 		if os.IsNotExist(err) {
 			fmt.Printf("no such set: %s\n", setname)
