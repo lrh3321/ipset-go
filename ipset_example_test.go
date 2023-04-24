@@ -68,3 +68,11 @@ func ExampleDestroy() {
 	//Output:
 	// no such set: hash012
 }
+
+func ExampleForceDestroy() {
+	setname := "hash03"
+	if err := ForceDestroy(setname); err != nil {
+		log.Fatal(err)
+	}
+	//Output:
+}
