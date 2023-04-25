@@ -3,6 +3,7 @@ package ipset
 import (
 	"log"
 	"net"
+	"os"
 	"syscall"
 
 	"github.com/vishvananda/netlink/nl"
@@ -136,7 +137,7 @@ func (h *Handle) Destroy(setname string) error {
 
 func (h *Handle) ForceDestroy(setname string) error {
 	err := h.Destroy(setname)
-	if err != nil && err != ErrSetNotExist {
+	if err != nil && err != ErrSetNotExist && !os.IsNotExist(err) {
 		return err
 	}
 	return nil
