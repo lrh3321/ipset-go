@@ -203,10 +203,6 @@ func (h *Handle) addDel(nlCmd int, setname string, entry *Entry) error {
 	req := h.newRequest(nlCmd)
 	req.AddData(nl.NewRtAttr(IPSET_ATTR_SETNAME, nl.ZeroTerminated(setname)))
 
-	if entry.Comment != "" {
-		req.AddData(nl.NewRtAttr(IPSET_ATTR_COMMENT, nl.ZeroTerminated(entry.Comment)))
-	}
-
 	data := nl.NewRtAttr(IPSET_ATTR_DATA|int(nl.NLA_F_NESTED), nil)
 
 	if !entry.Replace {
@@ -215,6 +211,10 @@ func (h *Handle) addDel(nlCmd int, setname string, entry *Entry) error {
 
 	if entry.Name != "" {
 		data.AddChild(nl.NewRtAttr(IPSET_ATTR_NAME, nl.ZeroTerminated(entry.Name)))
+	}
+
+	if entry.Comment != "" {
+		data.AddChild(nl.NewRtAttr(IPSET_ATTR_COMMENT, nl.ZeroTerminated(entry.Comment)))
 	}
 
 	if entry.Timeout != nil {
