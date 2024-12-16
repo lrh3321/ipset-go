@@ -207,6 +207,8 @@ func (h *Handle) addDel(nlCmd int, setname string, entry *Entry) error {
 
 	if !entry.Replace {
 		req.Flags |= unix.NLM_F_EXCL
+	} else {
+		req.flags |= unix.NLM_F_REPLACE
 	}
 
 	if entry.Name != "" {
