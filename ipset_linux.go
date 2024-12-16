@@ -205,10 +205,10 @@ func (h *Handle) addDel(nlCmd int, setname string, entry *Entry) error {
 
 	data := nl.NewRtAttr(IPSET_ATTR_DATA|int(nl.NLA_F_NESTED), nil)
 
-	req.Flags |= unix.NLM_F_EXCL
-
 	if entry.Replace {
 		req.Flags |= unix.NLM_F_REPLACE
+	} else {
+		req.Flags |= unix.NLM_F_EXCL
 	}
 
 	if entry.Name != "" {
