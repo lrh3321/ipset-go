@@ -1,4 +1,4 @@
-module github.com/lrh3321/ipset-go
+module github.com/ircop/ipset-go
 
 go 1.16
 
