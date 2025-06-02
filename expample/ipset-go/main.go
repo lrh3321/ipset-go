@@ -5,7 +5,7 @@ import (
 	"log"
 	"net"
 
-	"github.com/lrh3321/ipset-go"
+	"github.com/ircop/ipset-go"
 )
 
 func main() {
