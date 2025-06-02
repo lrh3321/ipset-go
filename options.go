@@ -10,6 +10,7 @@ type CreateOptions struct {
 	Family   uint8
 	Protocol uint8
 	Size     uint32 // size/hashsize
+	MaxElem  uint32 // max elements
 
 	Replace  bool // replace existing ipset
 	Timeout  uint32
