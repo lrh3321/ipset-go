@@ -125,7 +125,18 @@ func (h *Handle) Create(setname, typename string, options CreateOptions) error {
 
 	req.AddData(data)
 	_, err := ipsetExecute(req)
+	if isMissingIPSetModuleError(err) {
+		if loadErr := loadIPSetKernelModules(typename); loadErr != nil {
+			log.Printf("failed to load ipset kernel modules for type %q: %v", typename, loadErr)
+		} else {
+			_, err = ipsetExecute(req)
+		}
+	}
 	return err
+}
+
+func isMissingIPSetModuleError(err error) bool {
+	return err == ErrInvalidType || err == ErrSetNotExist || err == syscall.ENOENT
 }
 
 func (h *Handle) Destroy(setname string) error {
